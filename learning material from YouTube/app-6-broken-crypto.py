@@ -8,6 +8,43 @@ from bs4 import BeautifulSoup
 import requests
 import json
 import time
+
+from requests import Request, Session
+import json
+import time
+import webbrowser
+import pprint
+
+APIKEY = 'key'
+
+def getInfo (): # Function to get the info
+    url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest'
+    parameters = {
+        'start': '1',
+        'limit': '100',
+        'convert': 'USD'
+    }
+
+    # url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest' # Coinmarketcap API url
+
+    # parameters = { 'slug': 'bitcoin', 'convert': 'USD' } # API parameters to pass in for retrieving specific cryptocurrency data
+
+    headers = {
+        'Accepts': 'application/json',
+        'X-CMC_PRO_API_KEY': APIKEY
+    } 
+
+    session = Session()
+    session.headers.update(headers)
+
+    response = session.get(url, params=parameters)
+
+    info = json.loads(response.text)
+
+    # pprint.pprint(info)
+
+    return info
+
 #---------------------------------#
 # New feature (make sure to upgrade your streamlit library)
 # pip install --upgrade streamlit
@@ -19,9 +56,9 @@ st.set_page_config(layout="wide")
 #---------------------------------#
 # Title
 
-image = Image.open('logo.jpg')
+# image = Image.open('logo.jpg')
 
-st.image(image, width=500)
+# st.image(image, width=500)
 
 st.title('Crypto Price App')
 st.markdown("""
@@ -56,15 +93,7 @@ currency_price_unit = col1.selectbox(
 
 @st.cache
 def load_data():
-    cmc = requests.get('https://coinmarketcap.com')
-    soup = BeautifulSoup(cmc.content, 'html.parser')
-
-    data = soup.find('script', id='__NEXT_DATA__', type='application/json')
-    coins = {}
-    coin_data = json.loads(data.contents[0])
-    listings = coin_data['props']['initialState']['cryptocurrency']['listingLatest']['data']
-    for i in listings:
-        coins[str(i['id'])] = i['slug']
+    res = getInfo()
 
     coin_name = []
     coin_symbol = []
@@ -75,7 +104,7 @@ def load_data():
     price = []
     volume_24h = []
 
-    for i in listings:
+    for i in res['data']:
         coin_name.append(i['slug'])
         coin_symbol.append(i['symbol'])
         price.append(i['quote'][currency_price_unit]['price'])
